@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>茶葉管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #fdfaf4;
+    --surface2: #f0ebe0;
+    --border: #d4c9b0;
+    --text: #2c2416;
+    --text-muted: #7a6b52;
+    --accent: #5a7a4a;
+    --accent-light: #8aaa7a;
+    --accent-dark: #3d5733;
+    --gold: #b8962e;
+    --gold-light: #e8d08a;
+    --danger: #b04040;
+    --shadow: 0 2px 12px rgba(44,36,22,0.10);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--accent-dark);
+    color: #fff;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 64px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header .logo {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--gold-light);
+    white-space: nowrap;
+  }
+  nav {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  nav button {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.75);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.88rem;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    white-space: nowrap;
+  }
+  nav button:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  nav button.active { background: var(--gold); color: #fff; font-weight: 500; }
+
+  /* MAIN */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .section-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+
+  /* FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+  input, select, textarea {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.92rem;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--text);
+    outline: none;
+    transition: border 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(90,122,74,0.12);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* PRICE ROWS */
+  .price-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .price-row .price-item { display: flex; align-items: center; gap: 6px; }
+  .price-row label { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; }
+  .price-row input { width: 110px; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { font-size: 0.8rem; padding: 5px 12px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead th {
+    background: var(--accent-dark);
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 9px 12px; vertical-align: middle; }
+  td.action { white-space: nowrap; display: flex; gap: 6px; }
+
+  /* FILTER ROW */
+  .filter-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .filter-row .form-group { min-width: 130px; }
+  .filter-row label { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .badge-green { background: #d4edda; color: #2e6b3e; }
+  .badge-gold { background: #fdf0c0; color: #7a5c00; }
+  .badge-red { background: #fde8e8; color: #7a2020; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--accent-dark); font-family: 'Noto Serif TC', serif; }
+  .stat-card .unit { font-size: 0.8rem; color: var(--text-muted); margin-left: 3px; }
+
+  /* TOGGLE CHECKBOX */
+  .checkbox-group { display: flex; gap: 14px; flex-wrap: wrap; }
+  .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; cursor: pointer; }
+  .checkbox-item input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--accent-dark);
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 9999;
+  }
+  #toast.show { opacity: 1; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.45);
+    overflow-y: auto; padding: 40px 20px;
+  }
+  .modal-overlay.show { display: flex; align-items: flex-start; justify-content: center; }
+  .modal-box {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 26px 28px;
+    width: 100%; max-width: 580px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .modal-title { font-family: 'Noto Serif TC', serif; font-size: 1.1rem; font-weight: 700; color: var(--accent-dark); }
+  .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 2px 6px; border-radius: 4px; }
+  .modal-close:hover { background: var(--surface2); }
+  .tag { display: inline-block; background: var(--gold-light); color: var(--accent-dark); border-radius: 4px; padding: 1px 7px; font-size: 0.78rem; margin: 1px; }
+
+  /* UNIT CONVERT */
+  .unit-toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; width: fit-content; }
+  .unit-toggle button {
+    background: var(--surface2); border: none; padding: 6px 14px; font-size: 0.85rem;
+    cursor: pointer; color: var(--text-muted); transition: background 0.15s;
+  }
+  .unit-toggle button.active { background: var(--accent); color: #fff; font-weight: 500; }
+
+  .sep { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">☕ 茶葉管理系統</div>
+  <nav>
+    <button class="active" onclick="showSection('inventory-add')">＋ 庫存登錄</button>
+    <button onclick="showSection('inventory-view')">📦 庫存查詢</button>
+    <button onclick="showSection('sale-add')">💰 新增銷售</button>
+    <button onclick="showSection('customer-add')">👤 新增客人</button>
+    <button onclick="showSection('customer-view')">📋 客人名單</button>
+    <button onclick="showSection('income-view')">📊 收入統計</button>
+    <button onclick="showSection('export-import')">📁 匯出匯入</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ===== 庫存登錄 ===== -->
+<div id="inventory-add" class="section active">
+  <div class="section-title">📦 茶葉庫存登錄</div>
+  <div class="card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>年份</label>
+        <input type="number" id="inv-year" placeholder="例：2024" min="1900" max="2100">
+      </div>
+      <div class="form-group">
+        <label>製作節氣</label>
+        <select id="inv-solar">
+          <option value="">── 選擇節氣 ──</option>
+          <option>立春</option><option>雨水</option><option>驚蟄</option><option>春分</option>
+          <option>清明</option><option>穀雨</option><option>立夏</option><option>小滿</option>
+          <option>芒種</option><option>夏至</option><option>小暑</option><option>大暑</option>
+          <option>立秋</option><option>處暑</option><option>白露</option><option>秋分</option>
+          <option>寒露</option><option>霜降</option><option>立冬</option><option>小雪</option>
+          <option>大雪</option><option>冬至</option><option>小寒</option><option>大寒</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>茶葉品種</label>
+        <input type="text" id="inv-species" placeholder="例：烏龍、紅茶、綠茶">
+      </div>
+      <div class="form-group">
+        <label>茶葉品名</label>
+        <input type="text" id="inv-name" placeholder="例：阿里山高山茶">
+      </div>
+    </div>
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="form-group">
+        <label>庫存量</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="number" id="inv-stock-val" placeholder="數量" min="0" step="0.1" style="flex:1;">
+          <div class="unit-toggle">
+            <button class="active" id="inv-unit-g" onclick="setInvUnit('g')">公克</button>
+            <button id="inv-unit-jin" onclick="setInvUnit('jin')">斤</button>
+          </div>
+        </div>
+        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;" id="inv-stock-convert"></div>
+      </div>
+      <div class="form-group" style="align-self:end;">
+        <label style="color:var(--accent); font-weight:600;">設定售價（可多個單位）</label>
+      </div>
+    </div>
+    <div class="price-row" style="margin-bottom: 14px;">
+      <div class="price-item">
+        <label>1斤(600g)</label>
+        <input type="number" id="price-jin" placeholder="元" min="0" step="1">
+      </div>
+      <div class="price-item">
+        <label>100公克</label>
+        <input type="number" id="price-100g" placeholder="元" min="0" step="1">
+      </div>
+      <div class="price-item">
+        <label>10公克</label>
+        <input type="number" id="price-10g" placeholder="元" min="0" step="1">
+      </div>
+      <div class="price-item">
+        <label>1公克</label>
+        <input type="number" id="price-1g" placeholder="元" min="0" step="0.1">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addInventory()">新增庫存</button>
+      <button class="btn btn-secondary" onclick="clearInvForm()">清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 庫存查詢 ===== -->
+<div id="inventory-view" class="section">
+  <div class="section-title">🔍 庫存查詢</div>
+  <div class="filter-row">
+    <div class="form-group">
+      <label>年份</label>
+      <select id="filter-year"><option value="">全部</option></select>
+    </div>
+    <div class="form-group">
+      <label>節氣</label>
+      <select id="filter-solar"><option value="">全部</option></select>
+    </div>
+    <div class="form-group">
+      <label>品種</label>
+      <select id="filter-species"><option value="">全部</option></select>
+    </div>
+    <div class="form-group">
+      <label>品名關鍵字</label>
+      <input type="text" id="filter-name" placeholder="搜尋品名...">
+    </div>
+    <button class="btn btn-primary" onclick="renderInventoryTable()">搜尋</button>
+    <button class="btn btn-secondary" onclick="clearInventoryFilter()">清除篩選</button>
+    <div class="unit-toggle" style="margin-left:auto;">
+      <button class="active" id="view-unit-g" onclick="setViewUnit('g')">公克顯示</button>
+      <button id="view-unit-jin" onclick="setViewUnit('jin')">斤顯示</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>品名</th><th>品種</th><th>年份</th><th>節氣</th>
+          <th>庫存量</th><th>1斤</th><th>100g</th><th>10g</th><th>1g</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="inv-tbody"></tbody>
+    </table>
+  </div>
+  <div id="inv-empty" class="empty-msg" style="display:none;">目前無庫存資料</div>
+</div>
+
+<!-- ===== 新增銷售 ===== -->
+<div id="sale-add" class="section">
+  <div class="section-title">💰 茶葉販售登錄</div>
+  <div class="card">
+
+    <!-- 共用：時間、客人 -->
+    <div class="form-grid" style="margin-bottom:14px;">
+      <div class="form-group">
+        <label>販售時間</label>
+        <input type="datetime-local" id="sale-time">
+      </div>
+      <div class="form-group">
+        <label>販售廠商 / 客人（可選）</label>
+        <input type="text" id="sale-customer" placeholder="輸入姓名或選擇..." list="customer-datalist">
+        <datalist id="customer-datalist"></datalist>
+      </div>
+    </div>
+
+    <!-- 模式切換 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:7px; font-weight:500;">計價模式</div>
+      <div class="unit-toggle">
+        <button class="active" id="mode-btn-auto" onclick="setSaleMode('auto')">📋 從庫存選取自動計價</button>
+        <button id="mode-btn-manual" onclick="setSaleMode('manual')">✏️ 手動輸入公克與金額</button>
+      </div>
+    </div>
+
+    <!-- 模式 A：自動計價 -->
+    <div id="sale-mode-auto">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>茶葉品名</label>
+          <select id="sale-tea" onchange="onSaleTeaChange()">
+            <option value="">── 選擇茶品 ──</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>計價單位（用 1g 單價換算）</label>
+          <select id="sale-unit" onchange="calcSalePrice()">
+            <option value="">── 選擇單位 ──</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>販售量</label>
+          <div style="display:flex; gap:6px; align-items:center; min-width:0;">
+            <input type="number" id="sale-qty" placeholder="數量" min="0" step="0.1" oninput="calcSalePrice()" style="flex:1; min-width:0; width:0;">
+            <div class="unit-toggle" style="flex-shrink:0;">
+              <button class="active" id="auto-qty-unit-g" onclick="setAutoQtyUnit('g')">公克</button>
+              <button id="auto-qty-unit-jin" onclick="setAutoQtyUnit('jin')">斤</button>
+            </div>
+          </div>
+          <div id="sale-qty-convert" style="font-size:0.78rem; color:var(--text-muted); margin-top:3px;"></div>
+        </div>
+      </div>
+      <div id="sale-tea-info" style="display:none; margin-bottom:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px;">
+        <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:5px;">庫存資訊</div>
+        <div id="sale-tea-detail" style="font-size:0.9rem;"></div>
+      </div>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="form-group" style="min-width:0;">
+          <label>定價金額（自動）</label>
+          <input type="text" id="sale-price-base" readonly style="background:var(--surface2); color:var(--text-muted); width:100%; min-width:0; box-sizing:border-box;" placeholder="自動計算">
+        </div>
+        <div class="form-group" style="min-width:0;">
+          <label>折扣金額（選填，從定價中扣除）</label>
+          <input type="number" id="sale-discount" placeholder="輸入要折扣的金額" min="0" step="1" oninput="calcSalePrice()" style="width:100%; min-width:0; box-sizing:border-box;">
+        </div>
+        <div class="form-group" style="min-width:0;">
+          <label>實際銷售金額</label>
+          <input type="text" id="sale-price" readonly style="background:var(--gold-light); font-weight:700; color:var(--accent-dark); width:100%; min-width:0; box-sizing:border-box;" placeholder="金額">
+        </div>
+      </div>
+    </div>
+
+    <!-- 模式 B：手動輸入 -->
+    <div id="sale-mode-manual" style="display:none;">
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="form-group">
+          <label>茶葉品名（從庫存選取）</label>
+          <select id="sale-manual-tea" onchange="onManualTeaChange()">
+            <option value="">── 選擇茶品 ──</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>販售量</label>
+          <div style="display:flex; gap:6px; align-items:center; min-width:0;">
+            <input type="number" id="sale-manual-qty" placeholder="數量" min="0" step="0.1" oninput="calcManualConvert()" style="flex:1; min-width:0;">
+            <div class="unit-toggle" style="flex-shrink:0;">
+              <button class="active" id="manual-unit-g" onclick="setManualUnit('g')">公克</button>
+              <button id="manual-unit-jin" onclick="setManualUnit('jin')">斤</button>
+            </div>
+          </div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-top:3px;" id="manual-g-convert"></div>
+        </div>
+        <div class="form-group">
+          <label>銷售金額</label>
+          <input type="number" id="sale-manual-price" placeholder="元" min="0" step="1">
+        </div>
+      </div>
+      <div id="sale-manual-tea-info" style="display:none; margin-bottom:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px;">
+        <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:5px;">庫存資訊</div>
+        <div id="sale-manual-tea-detail" style="font-size:0.9rem;"></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+    <!-- 共用：備註 -->
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>備註（選填）</label>
+      <textarea id="sale-note" placeholder="可記錄特殊說明、交易備注..."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addSale()">新增銷售記錄</button>
+      <button class="btn btn-secondary" onclick="clearSaleForm()">清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 新增客人 ===== -->
+<div id="customer-add" class="section">
+  <div class="section-title">👤 新增客人</div>
+  <div class="card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>姓名 *</label>
+        <input type="text" id="cust-name" placeholder="必填">
+      </div>
+      <div class="form-group">
+        <label>電話</label>
+        <input type="tel" id="cust-phone" placeholder="選填">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="cust-email" placeholder="選填">
+      </div>
+      <div class="form-group">
+        <label>其他聯絡方式</label>
+        <input type="text" id="cust-other" placeholder="LINE / IG / 地址...">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>備註</label>
+      <textarea id="cust-note" placeholder="選填備註"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addCustomer()">新增客人</button>
+      <button class="btn btn-secondary" onclick="clearCustForm()">清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 客人名單 ===== -->
+<div id="customer-view" class="section">
+  <div class="section-title">📋 客人名單</div>
+  <div class="filter-row">
+    <div class="form-group">
+      <label>搜尋姓名</label>
+      <input type="text" id="cust-search" placeholder="輸入關鍵字..." oninput="renderCustomerTable()">
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>姓名</th><th>電話</th><th>Email</th><th>其他聯絡</th><th>累計消費</th><th>備註</th><th>操作</th></tr>
+      </thead>
+      <tbody id="cust-tbody"></tbody>
+    </table>
+  </div>
+  <div id="cust-empty" class="empty-msg" style="display:none;">目前無客人資料</div>
+
+  <!-- 客人購買紀錄 -->
+  <div id="cust-detail-card" class="card" style="display:none; margin-top:20px;">
+    <div class="section-title" style="font-size:1.05rem;" id="cust-detail-title">客人購買紀錄</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>時間</th><th>茶品</th><th>數量</th><th>金額</th><th>備註</th></tr></thead>
+        <tbody id="cust-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div id="cust-detail-total" style="text-align:right; margin-top:10px; font-weight:600; color:var(--accent-dark);"></div>
+  </div>
+</div>
+
+<!-- ===== 收入統計 ===== -->
+<div id="income-view" class="section">
+  <div class="section-title">📊 收入統計</div>
+  <div class="filter-row">
+    <div class="form-group">
+      <label>年份</label>
+      <select id="inc-year"><option value="">全部</option></select>
+    </div>
+    <div class="form-group">
+      <label>月份</label>
+      <select id="inc-month">
+        <option value="">全部</option>
+        <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+        <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+        <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+        <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>茶品</label>
+      <select id="inc-tea"><option value="">全部</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="renderIncome()">查詢</button>
+    <button class="btn btn-secondary" onclick="clearIncomeFilter()">清除</button>
+  </div>
+  <div class="stats-grid" id="income-stats"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>時間</th><th>客人</th><th>茶品</th><th>數量</th><th>金額</th><th>折扣</th><th>備註</th></tr></thead>
+      <tbody id="income-tbody"></tbody>
+    </table>
+  </div>
+  <div id="income-empty" class="empty-msg" style="display:none;">目前無銷售資料</div>
+</div>
+
+<!-- ===== 匯出匯入 ===== -->
+<div id="export-import" class="section">
+  <div class="section-title">📁 匯出 / 匯入</div>
+
+  <!-- 匯出 -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="font-family:'Noto Serif TC',serif; font-size:1.05rem; font-weight:700; color:var(--accent-dark); margin-bottom:6px;">📤 匯出 Excel</div>
+    <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:16px;">將目前所有資料匯出為 .xlsx 檔案，包含三個工作表：庫存、銷售記錄、客人名單。</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="exportExcel()">⬇ 下載 Excel 檔案</button>
+    </div>
+  </div>
+
+  <!-- 以信件寄出 -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="font-family:'Noto Serif TC',serif; font-size:1.05rem; font-weight:700; color:var(--accent-dark); margin-bottom:6px;">✉️ 以信件寄出</div>
+    <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">先下載 Excel 後，系統會開啟郵件程式並自動帶入收件人與主旨，您再手動將下載的檔案附上即可。</p>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:14px;">
+      <div class="form-group">
+        <label>收件人 Email</label>
+        <input type="email" id="mail-to" placeholder="收件人信箱">
+      </div>
+      <div class="form-group">
+        <label>主旨（可修改）</label>
+        <input type="text" id="mail-subject" value="茶葉庫存與銷售資料">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>信件內文</label>
+        <textarea id="mail-body" rows="3">您好，請參閱附件中的茶葉庫存與銷售記錄 Excel 檔案。</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="sendMail()">✉ 下載並開啟郵件程式</button>
+    </div>
+  </div>
+
+  <!-- 匯入 -->
+  <div class="card">
+    <div style="font-family:'Noto Serif TC',serif; font-size:1.05rem; font-weight:700; color:var(--accent-dark); margin-bottom:6px;">📥 匯入 Excel</div>
+    <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:6px;">請選擇先前由本系統匯出的 .xlsx 檔案。匯入後可選擇<strong>取代</strong>現有資料或<strong>合併</strong>（依 ID 去重）。</p>
+    <div style="background:#fff8e8; border:1px solid var(--gold-light); border-radius:7px; padding:10px 14px; font-size:0.82rem; color:#7a5c00; margin-bottom:14px;">
+      ⚠️ 取代模式會清除目前所有資料，請先確認已備份。
+    </div>
+    <div class="form-grid" style="grid-template-columns:auto auto; align-items:end; margin-bottom:14px;">
+      <div class="form-group">
+        <label>選擇 Excel 檔案</label>
+        <input type="file" id="import-file" accept=".xlsx" style="background:var(--surface2); padding:7px 10px;">
+      </div>
+      <div class="form-group">
+        <label>匯入模式</label>
+        <div class="unit-toggle">
+          <button class="active" id="import-mode-merge" onclick="setImportMode('merge')">合併</button>
+          <button id="import-mode-replace" onclick="setImportMode('replace')">取代</button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="importExcel()">📥 匯入資料</button>
+    </div>
+    <div id="import-result" style="margin-top:12px; font-size:0.88rem;"></div>
+  </div>
+</div>
+
+</main>
+<!-- ===== 庫存編輯 Modal ===== -->
+<div id="inv-edit-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">✏️ 編輯庫存資料</div>
+      <button class="modal-close" onclick="closeInvEditModal()">✕</button>
+    </div>
+    <input type="hidden" id="edit-inv-id">
+    <div class="form-grid">
+      <div class="form-group"><label>年份</label><input type="number" id="edit-inv-year" placeholder="例：2024" min="1900" max="2100"></div>
+      <div class="form-group"><label>製作節氣</label>
+        <select id="edit-inv-solar">
+          <option value="">── 選擇節氣 ──</option>
+          <option>立春</option><option>雨水</option><option>驚蟄</option><option>春分</option>
+          <option>清明</option><option>穀雨</option><option>立夏</option><option>小滿</option>
+          <option>芒種</option><option>夏至</option><option>小暑</option><option>大暑</option>
+          <option>立秋</option><option>處暑</option><option>白露</option><option>秋分</option>
+          <option>寒露</option><option>霜降</option><option>立冬</option><option>小雪</option>
+          <option>大雪</option><option>冬至</option><option>小寒</option><option>大寒</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="form-group"><label>茶葉品種</label><input type="text" id="edit-inv-species" placeholder="烏龍、紅茶…"></div>
+      <div class="form-group"><label>茶葉品名 *</label><input type="text" id="edit-inv-name" placeholder="品名"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>庫存量</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="number" id="edit-inv-stock-val" placeholder="數量" min="0" step="0.1" style="flex:1;" oninput="updateEditInvConvert()">
+        <div class="unit-toggle">
+          <button class="active" id="edit-inv-unit-g" onclick="setEditInvUnit('g')">公克</button>
+          <button id="edit-inv-unit-jin" onclick="setEditInvUnit('jin')">斤</button>
+        </div>
+      </div>
+      <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;" id="edit-inv-convert"></div>
+    </div>
+    <div style="font-size:0.82rem; color:var(--accent); font-weight:600; margin-bottom:8px;">💴 售價設定</div>
+    <div class="price-row" style="margin-bottom:16px;">
+      <div class="price-item"><label>1斤(600g)</label><input type="number" id="edit-price-jin" placeholder="元"></div>
+      <div class="price-item"><label>100公克</label><input type="number" id="edit-price-100g" placeholder="元"></div>
+      <div class="price-item"><label>10公克</label><input type="number" id="edit-price-10g" placeholder="元"></div>
+      <div class="price-item"><label>1公克</label><input type="number" id="edit-price-1g" placeholder="元" step="0.1"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveInvEdit()">💾 儲存變更</button>
+      <button class="btn btn-secondary" onclick="closeInvEditModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 客人編輯 Modal ===== -->
+<div id="cust-edit-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">✏️ 編輯客人資訊</div>
+      <button class="modal-close" onclick="closeCustEditModal()">✕</button>
+    </div>
+    <input type="hidden" id="edit-cust-id">
+    <div class="form-grid">
+      <div class="form-group"><label>姓名 *</label><input type="text" id="edit-cust-name" placeholder="必填"></div>
+      <div class="form-group"><label>電話</label><input type="tel" id="edit-cust-phone" placeholder="選填"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="edit-cust-email" placeholder="選填"></div>
+      <div class="form-group"><label>其他聯絡方式</label><input type="text" id="edit-cust-other" placeholder="LINE / IG…"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>備註</label>
+      <textarea id="edit-cust-note" placeholder="選填備註"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveCustEdit()">💾 儲存變更</button>
+      <button class="btn btn-secondary" onclick="closeCustEditModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============== DATA STORE ==============
+let db = {
+  inventory: [], // { id, year, solar, species, name, stockG, priceJin, price100g, price10g, price1g }
+  customers: [], // { id, name, phone, email, other, note }
+  sales: []      // { id, time, customer, teaId, teaName, unit, qty, price }
+};
+
+let invUnit = 'g'; // display unit for inventory
+let viewUnit = 'g';
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem('tea_db');
+    if (raw) db = JSON.parse(raw);
+  } catch(e) {}
+}
+function saveDB() {
+  localStorage.setItem('tea_db', JSON.stringify(db));
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ============== TOAST ==============
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ============== NAV ==============
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const btns = document.querySelectorAll('nav button');
+  const map = {
+    'inventory-add': 0, 'inventory-view': 1, 'sale-add': 2,
+    'customer-add': 3, 'customer-view': 4, 'income-view': 5, 'export-import': 6
+  };
+  btns[map[id]].classList.add('active');
+  if (id === 'inventory-view') { populateFilters(); renderInventoryTable(); }
+  if (id === 'sale-add') { populateSaleDropdowns(); setSaleNow(); }
+  if (id === 'customer-view') { renderCustomerTable(); }
+  if (id === 'income-view') { populateIncomeFilters(); renderIncome(); }
+}
+
+// ============== UNIT HELPERS ==============
+function gToDisplay(g, unit) {
+  if (unit === 'jin') return (g / 600).toFixed(3) + ' 斤';
+  return g + ' 公克';
+}
+function setInvUnit(u) {
+  invUnit = u;
+  document.getElementById('inv-unit-g').classList.toggle('active', u === 'g');
+  document.getElementById('inv-unit-jin').classList.toggle('active', u === 'jin');
+  updateInvConvert();
+}
+function setViewUnit(u) {
+  viewUnit = u;
+  document.getElementById('view-unit-g').classList.toggle('active', u === 'g');
+  document.getElementById('view-unit-jin').classList.toggle('active', u === 'jin');
+  renderInventoryTable();
+}
+function updateInvConvert() {
+  const val = parseFloat(document.getElementById('inv-stock-val').value) || 0;
+  const el = document.getElementById('inv-stock-convert');
+  if (!val) { el.textContent = ''; return; }
+  if (invUnit === 'g') {
+    el.textContent = `= ${(val/600).toFixed(3)} 斤`;
+  } else {
+    el.textContent = `= ${(val*600).toFixed(0)} 公克`;
+  }
+}
+document.addEventListener('input', e => {
+  if (e.target.id === 'inv-stock-val') updateInvConvert();
+});
+
+// ============== INVENTORY ==============
+function addInventory() {
+  const year = document.getElementById('inv-year').value.trim();
+  const solar = document.getElementById('inv-solar').value;
+  const species = document.getElementById('inv-species').value.trim();
+  const name = document.getElementById('inv-name').value.trim();
+  const stockVal = parseFloat(document.getElementById('inv-stock-val').value);
+  if (!name) { toast('請填寫茶葉品名'); return; }
+  if (isNaN(stockVal) || stockVal < 0) { toast('請填寫有效庫存量'); return; }
+  const stockG = invUnit === 'g' ? stockVal : stockVal * 600;
+  const priceJin = parseFloat(document.getElementById('price-jin').value) || null;
+  const price100g = parseFloat(document.getElementById('price-100g').value) || null;
+  const price10g = parseFloat(document.getElementById('price-10g').value) || null;
+  const price1g = parseFloat(document.getElementById('price-1g').value) || null;
+  db.inventory.push({ id: uid(), year, solar, species, name, stockG, priceJin, price100g, price10g, price1g });
+  saveDB();
+  toast('✅ 庫存已新增：' + name);
+  clearInvForm();
+}
+function clearInvForm() {
+  ['inv-year','inv-stock-val','inv-species','inv-name','price-jin','price-100g','price-10g','price-1g'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('inv-solar').value = '';
+  document.getElementById('inv-stock-convert').textContent = '';
+}
+function deleteInventory(id) {
+  if (!confirm('確定刪除此庫存？')) return;
+  db.inventory = db.inventory.filter(i => i.id !== id);
+  saveDB();
+  renderInventoryTable();
+  toast('已刪除');
+}
+function populateFilters() {
+  const years = [...new Set(db.inventory.map(i => i.year).filter(Boolean))].sort();
+  const solars = [...new Set(db.inventory.map(i => i.solar).filter(Boolean))];
+  const sps = [...new Set(db.inventory.map(i => i.species).filter(Boolean))].sort();
+  fillSelect('filter-year', years, '全部');
+  fillSelect('filter-solar', solars, '全部');
+  fillSelect('filter-species', sps, '全部');
+}
+function fillSelect(id, opts, placeholder) {
+  const el = document.getElementById(id);
+  const cur = el.value;
+  el.innerHTML = `<option value="">${placeholder}</option>`;
+  opts.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; el.appendChild(opt); });
+  el.value = cur;
+}
+function clearInventoryFilter() {
+  ['filter-year','filter-solar','filter-species'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('filter-name').value = '';
+  renderInventoryTable();
+}
+function renderInventoryTable() {
+  const y = document.getElementById('filter-year').value;
+  const s = document.getElementById('filter-solar').value;
+  const sp = document.getElementById('filter-species').value;
+  const n = document.getElementById('filter-name').value.toLowerCase();
+  let items = db.inventory.filter(i =>
+    (!y || i.year === y) &&
+    (!s || i.solar === s) &&
+    (!sp || i.species === sp) &&
+    (!n || i.name.toLowerCase().includes(n))
+  );
+  const tbody = document.getElementById('inv-tbody');
+  const empty = document.getElementById('inv-empty');
+  if (!items.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = items.map(i => `
+    <tr>
+      <td><strong>${i.name}</strong></td>
+      <td><span class="tag">${i.species || '—'}</span></td>
+      <td>${i.year || '—'}</td>
+      <td>${i.solar || '—'}</td>
+      <td>${gToDisplay(i.stockG, viewUnit)}</td>
+      <td>${i.priceJin != null ? '$'+i.priceJin : '—'}</td>
+      <td>${i.price100g != null ? '$'+i.price100g : '—'}</td>
+      <td>${i.price10g != null ? '$'+i.price10g : '—'}</td>
+      <td>${i.price1g != null ? '$'+i.price1g : '—'}</td>
+      <td class="action">
+        <button class="btn btn-sm btn-secondary" onclick="openInvEditModal('${i.id}')">編輯</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteInventory('${i.id}')">刪除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ============== SALE ==============
+let saleMode = 'auto';
+function setSaleMode(mode) {
+  saleMode = mode;
+  document.getElementById('sale-mode-auto').style.display = mode === 'auto' ? '' : 'none';
+  document.getElementById('sale-mode-manual').style.display = mode === 'manual' ? '' : 'none';
+  document.getElementById('mode-btn-auto').classList.toggle('active', mode === 'auto');
+  document.getElementById('mode-btn-manual').classList.toggle('active', mode === 'manual');
+}
+function setSaleNow() {
+  const now = new Date();
+  const local = new Date(now - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('sale-time').value = local;
+}
+function populateSaleDropdowns() {
+  const sel = document.getElementById('sale-tea');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">── 選擇茶品 ──</option>';
+  db.inventory.forEach(i => {
+    const opt = document.createElement('option');
+    opt.value = i.id;
+    opt.textContent = `${i.name}${i.year ? ' (' + i.year + ')' : ''}`;
+    sel.appendChild(opt);
+  });
+  sel.value = cur;
+  // customers datalist
+  const dl = document.getElementById('customer-datalist');
+  dl.innerHTML = '';
+  db.customers.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    dl.appendChild(opt);
+  });
+  // manual mode tea select
+  const msel = document.getElementById('sale-manual-tea');
+  const mcur = msel.value;
+  msel.innerHTML = '<option value="">── 選擇茶品 ──</option>';
+  db.inventory.forEach(i => {
+    const opt = document.createElement('option');
+    opt.value = i.id;
+    opt.textContent = `${i.name}${i.year ? ' (' + i.year + ')' : ''}`;
+    msel.appendChild(opt);
+  });
+  msel.value = mcur;
+}
+function onSaleTeaChange() {
+  const id = document.getElementById('sale-tea').value;
+  const infoDiv = document.getElementById('sale-tea-info');
+  const unitSel = document.getElementById('sale-unit');
+  unitSel.innerHTML = '<option value="">── 選擇單位 ──</option>';
+  document.getElementById('sale-price').value = '';
+  document.getElementById('sale-price-base').value = '';
+  document.getElementById('sale-discount').value = '';
+  document.getElementById('sale-qty').value = '';
+  if (!id) { infoDiv.style.display = 'none'; return; }
+  const tea = db.inventory.find(i => i.id === id);
+  if (!tea) return;
+  infoDiv.style.display = '';
+  document.getElementById('sale-tea-detail').innerHTML =
+    `品種：${tea.species||'—'} ｜ 年份：${tea.year||'—'} ｜ 節氣：${tea.solar||'—'} ｜ 庫存：${gToDisplay(tea.stockG,'g')} (${gToDisplay(tea.stockG,'jin')})`;
+  const units = [];
+  if (tea.priceJin != null) units.push({ label: '1斤 (600g)', value: 'jin', price: tea.priceJin, unitG: 600 });
+  if (tea.price100g != null) units.push({ label: '100公克', value: '100g', price: tea.price100g, unitG: 100 });
+  if (tea.price10g != null) units.push({ label: '10公克', value: '10g', price: tea.price10g, unitG: 10 });
+  if (tea.price1g != null) units.push({ label: '1公克', value: '1g', price: tea.price1g, unitG: 1 });
+  units.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.value;
+    opt.textContent = `${u.label} — $${u.price}`;
+    unitSel.appendChild(opt);
+  });
+  calcSalePrice();
+}
+let autoQtyUnit = 'g';
+function setAutoQtyUnit(u) {
+  const qtyEl = document.getElementById('sale-qty');
+  const cur = parseFloat(qtyEl.value) || 0;
+  // convert current displayed value to new unit before switching
+  if (cur > 0) {
+    if (autoQtyUnit === 'g' && u === 'jin') qtyEl.value = (cur / 600).toFixed(4);
+    else if (autoQtyUnit === 'jin' && u === 'g') qtyEl.value = (cur * 600).toFixed(1);
+  }
+  autoQtyUnit = u;
+  document.getElementById('auto-qty-unit-g').classList.toggle('active', u === 'g');
+  document.getElementById('auto-qty-unit-jin').classList.toggle('active', u === 'jin');
+  calcSalePrice();
+}
+function calcSalePrice() {
+  const id = document.getElementById('sale-tea').value;
+  const unitVal = document.getElementById('sale-unit').value;
+  const qtyRaw = parseFloat(document.getElementById('sale-qty').value) || 0;
+  const baseEl = document.getElementById('sale-price-base');
+  const priceEl = document.getElementById('sale-price');
+  const convertEl = document.getElementById('sale-qty-convert');
+  const discountVal = document.getElementById('sale-discount').value;
+
+  // show conversion hint
+  if (qtyRaw > 0) {
+    if (autoQtyUnit === 'g') convertEl.textContent = `= ${(qtyRaw/600).toFixed(4)} 斤`;
+    else convertEl.textContent = `= ${(qtyRaw*600).toFixed(1)} 公克`;
+  } else { convertEl.textContent = ''; }
+
+  if (!id || !unitVal) { baseEl.value = ''; priceEl.value = ''; return; }
+  const tea = db.inventory.find(i => i.id === id);
+  if (!tea) { baseEl.value = ''; priceEl.value = ''; return; }
+
+  // derive per-gram price from the selected unit
+  const unitPriceMap = {
+    'jin':  { price: tea.priceJin,  g: 600 },
+    '100g': { price: tea.price100g, g: 100 },
+    '10g':  { price: tea.price10g,  g: 10  },
+    '1g':   { price: tea.price1g,   g: 1   }
+  };
+  const selected = unitPriceMap[unitVal];
+  if (!selected || selected.price == null) {
+    baseEl.value = '未設定此單位售價'; priceEl.value = ''; return;
+  }
+  const pricePerG = selected.price / selected.g;
+
+  const totalG = autoQtyUnit === 'g' ? qtyRaw : qtyRaw * 600;
+  if (totalG > 0) {
+    const base = pricePerG * totalG;
+    baseEl.value = '$' + base.toFixed(0);
+    const discount = parseFloat(discountVal);
+    const final = isNaN(discount) ? base : Math.max(0, base - discount);
+    priceEl.value = '$' + final.toFixed(0);
+  } else { baseEl.value = ''; priceEl.value = ''; }
+}
+let manualUnit = 'g';
+function setManualUnit(u) {
+  manualUnit = u;
+  document.getElementById('manual-unit-g').classList.toggle('active', u === 'g');
+  document.getElementById('manual-unit-jin').classList.toggle('active', u === 'jin');
+  calcManualConvert();
+}
+function onManualTeaChange() {
+  const id = document.getElementById('sale-manual-tea').value;
+  const infoDiv = document.getElementById('sale-manual-tea-info');
+  if (!id) { infoDiv.style.display = 'none'; return; }
+  const tea = db.inventory.find(i => i.id === id);
+  if (!tea) return;
+  infoDiv.style.display = '';
+  document.getElementById('sale-manual-tea-detail').innerHTML =
+    `品種：${tea.species||'—'} ｜ 年份：${tea.year||'—'} ｜ 節氣：${tea.solar||'—'} ｜ 庫存：${gToDisplay(tea.stockG,'g')} (${gToDisplay(tea.stockG,'jin')})`;
+}
+function calcManualConvert() {
+  const qty = parseFloat(document.getElementById('sale-manual-qty').value) || 0;
+  const el = document.getElementById('manual-g-convert');
+  if (!qty) { el.textContent = ''; return; }
+  if (manualUnit === 'g') {
+    el.textContent = `= ${(qty/600).toFixed(4)} 斤`;
+  } else {
+    el.textContent = `= ${(qty*600).toFixed(0)} 公克`;
+  }
+}
+function addSale() {
+  const time = document.getElementById('sale-time').value;
+  const customer = document.getElementById('sale-customer').value.trim();
+  const note = document.getElementById('sale-note').value.trim();
+  if (!time) { toast('請選擇販售時間'); return; }
+
+  if (saleMode === 'auto') {
+    const teaId = document.getElementById('sale-tea').value;
+    const unit = document.getElementById('sale-unit').value;
+    const qtyRaw = parseFloat(document.getElementById('sale-qty').value);
+    const priceStr = document.getElementById('sale-price').value.replace('$','');
+    const price = parseFloat(priceStr);
+    const discountVal = document.getElementById('sale-discount').value;
+    const hasDiscount = discountVal !== '' && !isNaN(parseFloat(discountVal));
+    if (!teaId) { toast('請選擇茶葉品名'); return; }
+    if (!unit) { toast('請選擇計價單位'); return; }
+    if (!qtyRaw || qtyRaw <= 0) { toast('請輸入販售量'); return; }
+    if (!price) { toast('售價計算有誤，請確認品項是否有設定 1公克售價'); return; }
+    const tea = db.inventory.find(i => i.id === teaId);
+    const totalG = autoQtyUnit === 'g' ? qtyRaw : qtyRaw * 600;
+    db.sales.push({ id: uid(), time, customer, teaId, teaName: tea ? tea.name : '已刪除', unit: autoQtyUnit, qty: qtyRaw, price, discount: hasDiscount, note, mode: 'auto', stockG: totalG });
+    if (tea) tea.stockG = Math.max(0, tea.stockG - totalG);
+  } else {
+    const manualTeaId = document.getElementById('sale-manual-tea').value;
+    const qtyVal = parseFloat(document.getElementById('sale-manual-qty').value);
+    const priceVal = parseFloat(document.getElementById('sale-manual-price').value);
+    if (!manualTeaId) { toast('請選擇茶葉品名'); return; }
+    if (!qtyVal || qtyVal <= 0) { toast('請輸入販售量'); return; }
+    if (!priceVal || priceVal <= 0) { toast('請輸入銷售金額'); return; }
+    const tea = db.inventory.find(i => i.id === manualTeaId);
+    const gVal = manualUnit === 'g' ? qtyVal : qtyVal * 600;
+    db.sales.push({ id: uid(), time, customer, teaId: manualTeaId, teaName: tea ? tea.name : '已刪除', unit: manualUnit, qty: qtyVal, price: priceVal, note, mode: 'manual', stockG: gVal });
+    if (tea) tea.stockG = Math.max(0, tea.stockG - gVal);
+  }
+  saveDB();
+  toast('✅ 銷售記錄已新增');
+  clearSaleForm();
+  setSaleNow();
+}
+function clearSaleForm() {
+  document.getElementById('sale-customer').value = '';
+  document.getElementById('sale-note').value = '';
+  // auto mode
+  document.getElementById('sale-tea').value = '';
+  document.getElementById('sale-unit').innerHTML = '<option value="">── 選擇單位 ──</option>';
+  document.getElementById('sale-qty').value = '';
+  document.getElementById('sale-price').value = '';
+  document.getElementById('sale-price-base').value = '';
+  document.getElementById('sale-discount').value = '';
+  document.getElementById('sale-tea-info').style.display = 'none';
+  document.getElementById('sale-qty-convert').textContent = '';
+  autoQtyUnit = 'g';
+  document.getElementById('auto-qty-unit-g').classList.add('active');
+  document.getElementById('auto-qty-unit-jin').classList.remove('active');
+  // manual mode
+  document.getElementById('sale-manual-tea').value = '';
+  document.getElementById('sale-manual-qty').value = '';
+  document.getElementById('sale-manual-price').value = '';
+  document.getElementById('manual-g-convert').textContent = '';
+  document.getElementById('sale-manual-tea-info').style.display = 'none';
+  manualUnit = 'g';
+  document.getElementById('manual-unit-g').classList.add('active');
+  document.getElementById('manual-unit-jin').classList.remove('active');
+}
+
+// ============== CUSTOMER ==============
+function addCustomer() {
+  const name = document.getElementById('cust-name').value.trim();
+  if (!name) { toast('請填寫客人姓名'); return; }
+  const phone = document.getElementById('cust-phone').value.trim();
+  const email = document.getElementById('cust-email').value.trim();
+  const other = document.getElementById('cust-other').value.trim();
+  const note = document.getElementById('cust-note').value.trim();
+  db.customers.push({ id: uid(), name, phone, email, other, note });
+  saveDB();
+  toast('✅ 已新增客人：' + name);
+  clearCustForm();
+}
+function clearCustForm() {
+  ['cust-name','cust-phone','cust-email','cust-other','cust-note'].forEach(id => document.getElementById(id).value = '');
+}
+function deleteCustomer(id) {
+  if (!confirm('確定刪除此客人？（不影響銷售記錄）')) return;
+  db.customers = db.customers.filter(c => c.id !== id);
+  saveDB();
+  renderCustomerTable();
+  toast('已刪除');
+}
+function renderCustomerTable() {
+  const kw = document.getElementById('cust-search').value.toLowerCase();
+  let custs = db.customers.filter(c => !kw || c.name.toLowerCase().includes(kw));
+  const tbody = document.getElementById('cust-tbody');
+  const empty = document.getElementById('cust-empty');
+  if (!custs.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = custs.map(c => {
+    const total = db.sales.filter(s => s.customer === c.name).reduce((a, s) => a + s.price, 0);
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.phone||'—'}</td>
+      <td>${c.email||'—'}</td>
+      <td>${c.other||'—'}</td>
+      <td><span class="badge badge-gold">$${total.toLocaleString()}</span></td>
+      <td style="max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.note||'—'}</td>
+      <td class="action">
+        <button class="btn btn-sm btn-secondary" onclick="showCustDetail('${c.id}')">購買記錄</button>
+        <button class="btn btn-sm" style="background:var(--gold-light);color:var(--accent-dark);border:1px solid var(--border);" onclick="openCustEditModal('${c.id}')">編輯</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCustomer('${c.id}')">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function showCustDetail(id) {
+  const cust = db.customers.find(c => c.id === id);
+  if (!cust) return;
+  const sales = db.sales.filter(s => s.customer === cust.name).sort((a,b) => b.time.localeCompare(a.time));
+  const card = document.getElementById('cust-detail-card');
+  card.style.display = '';
+  document.getElementById('cust-detail-title').textContent = `${cust.name} 的購買記錄`;
+  const tbody = document.getElementById('cust-detail-tbody');
+  if (!sales.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">尚無購買記錄</td></tr>'; }
+  else {
+    tbody.innerHTML = sales.map(s => {
+      const qtyDisplay = s.mode === 'manual' ? `${s.qty}公克` : `${s.qty} ${s.unit}`;
+      return `<tr>
+        <td>${s.time.replace('T',' ')}</td>
+        <td>${s.teaName}</td>
+        <td>${qtyDisplay}</td>
+        <td>$${s.price.toLocaleString()}</td>
+        <td style="color:var(--text-muted); font-size:0.85rem;">${s.note||'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+  const total = sales.reduce((a,s) => a+s.price, 0);
+  document.getElementById('cust-detail-total').textContent = `累計消費：$${total.toLocaleString()}`;
+  card.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ============== INCOME ==============
+function populateIncomeFilters() {
+  const years = [...new Set(db.sales.map(s => s.time.slice(0,4)).filter(Boolean))].sort();
+  const teas = [...new Set(db.sales.map(s => s.teaName).filter(Boolean))].sort();
+  fillSelect('inc-year', years, '全部');
+  fillSelect('inc-tea', teas, '全部');
+}
+function clearIncomeFilter() {
+  ['inc-year','inc-month','inc-tea'].forEach(id => document.getElementById(id).value = '');
+  renderIncome();
+}
+function renderIncome() {
+  const y = document.getElementById('inc-year').value;
+  const m = document.getElementById('inc-month').value;
+  const t = document.getElementById('inc-tea').value;
+  let items = db.sales.filter(s =>
+    (!y || s.time.slice(0,4) === y) &&
+    (!m || parseInt(s.time.slice(5,7)) === parseInt(m)) &&
+    (!t || s.teaName === t)
+  ).sort((a,b) => b.time.localeCompare(a.time));
+  const tbody = document.getElementById('income-tbody');
+  const empty = document.getElementById('income-empty');
+  const stats = document.getElementById('income-stats');
+  if (!items.length) { tbody.innerHTML = ''; empty.style.display = ''; stats.innerHTML = ''; return; }
+  empty.style.display = 'none';
+  const total = items.reduce((a,s) => a+s.price, 0);
+  const byTea = {};
+  items.forEach(s => { byTea[s.teaName] = (byTea[s.teaName]||0) + s.price; });
+  const topTea = Object.entries(byTea).sort((a,b) => b[1]-a[1])[0];
+  stats.innerHTML = `
+    <div class="stat-card"><div class="label">總收入</div><div class="value">$${total.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">銷售筆數</div><div class="value">${items.length}<span class="unit">筆</span></div></div>
+    <div class="stat-card"><div class="label">最熱銷茶品</div><div class="value" style="font-size:1rem;">${topTea ? topTea[0] : '—'}</div></div>
+    <div class="stat-card"><div class="label">平均客單價</div><div class="value">$${Math.round(total/items.length).toLocaleString()}</div></div>
+  `;
+  tbody.innerHTML = items.map(s => {
+    const qtyDisplay = s.mode === 'manual' ? `${s.qty}公克` : `${s.qty} ${s.unit}`;
+    const discountBadge = s.discount ? '<span class="badge badge-red">折扣</span>' : '—';
+    return `<tr>
+      <td>${s.time.replace('T',' ')}</td>
+      <td>${s.customer||'<i style="color:var(--text-muted)">未記錄</i>'}</td>
+      <td><span class="tag">${s.teaName}</span></td>
+      <td>${qtyDisplay}</td>
+      <td>$${s.price.toLocaleString()}</td>
+      <td>${discountBadge}</td>
+      <td style="max-width:140px; color:var(--text-muted); font-size:0.85rem;">${s.note||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============== INVENTORY EDIT MODAL ==============
+let editInvUnit = 'g';
+function openInvEditModal(id) {
+  const inv = db.inventory.find(i => i.id === id);
+  if (!inv) return;
+  document.getElementById('edit-inv-id').value = inv.id;
+  document.getElementById('edit-inv-year').value = inv.year || '';
+  document.getElementById('edit-inv-solar').value = inv.solar || '';
+  document.getElementById('edit-inv-species').value = inv.species || '';
+  document.getElementById('edit-inv-name').value = inv.name;
+  document.getElementById('edit-inv-stock-val').value = inv.stockG;
+  document.getElementById('edit-price-jin').value = inv.priceJin ?? '';
+  document.getElementById('edit-price-100g').value = inv.price100g ?? '';
+  document.getElementById('edit-price-10g').value = inv.price10g ?? '';
+  document.getElementById('edit-price-1g').value = inv.price1g ?? '';
+  editInvUnit = 'g';
+  document.getElementById('edit-inv-unit-g').classList.add('active');
+  document.getElementById('edit-inv-unit-jin').classList.remove('active');
+  updateEditInvConvert();
+  document.getElementById('inv-edit-modal').classList.add('show');
+}
+function closeInvEditModal() {
+  document.getElementById('inv-edit-modal').classList.remove('show');
+  document.getElementById('edit-inv-convert').textContent = '';
+}
+function setEditInvUnit(u) {
+  const el = document.getElementById('edit-inv-stock-val');
+  const cur = parseFloat(el.value) || 0;
+  if (cur > 0) {
+    if (editInvUnit === 'g' && u === 'jin') el.value = (cur / 600).toFixed(4);
+    else if (editInvUnit === 'jin' && u === 'g') el.value = (cur * 600).toFixed(1);
+  }
+  editInvUnit = u;
+  document.getElementById('edit-inv-unit-g').classList.toggle('active', u === 'g');
+  document.getElementById('edit-inv-unit-jin').classList.toggle('active', u === 'jin');
+  updateEditInvConvert();
+}
+function updateEditInvConvert() {
+  const val = parseFloat(document.getElementById('edit-inv-stock-val').value) || 0;
+  const el = document.getElementById('edit-inv-convert');
+  if (!val) { el.textContent = ''; return; }
+  el.textContent = editInvUnit === 'g' ? `= ${(val/600).toFixed(3)} 斤` : `= ${(val*600).toFixed(0)} 公克`;
+}
+function saveInvEdit() {
+  const id = document.getElementById('edit-inv-id').value;
+  const name = document.getElementById('edit-inv-name').value.trim();
+  if (!name) { toast('請填寫茶葉品名'); return; }
+  const stockVal = parseFloat(document.getElementById('edit-inv-stock-val').value);
+  if (isNaN(stockVal) || stockVal < 0) { toast('請填寫有效庫存量'); return; }
+  const inv = db.inventory.find(i => i.id === id);
+  if (!inv) return;
+  const oldName = inv.name;
+  inv.year = document.getElementById('edit-inv-year').value.trim();
+  inv.solar = document.getElementById('edit-inv-solar').value;
+  inv.species = document.getElementById('edit-inv-species').value.trim();
+  inv.name = name;
+  inv.stockG = editInvUnit === 'g' ? stockVal : stockVal * 600;
+  inv.priceJin = parseFloat(document.getElementById('edit-price-jin').value) || null;
+  inv.price100g = parseFloat(document.getElementById('edit-price-100g').value) || null;
+  inv.price10g = parseFloat(document.getElementById('edit-price-10g').value) || null;
+  inv.price1g = parseFloat(document.getElementById('edit-price-1g').value) || null;
+  // 同步銷售記錄品名
+  if (oldName !== name) {
+    db.sales.forEach(s => { if (s.teaName === oldName) s.teaName = name; });
+  }
+  saveDB();
+  closeInvEditModal();
+  renderInventoryTable();
+  toast('✅ 庫存資料已更新');
+}
+
+// ============== CUSTOMER EDIT MODAL ==============
+function openCustEditModal(id) {
+  const cust = db.customers.find(c => c.id === id);
+  if (!cust) return;
+  document.getElementById('edit-cust-id').value = cust.id;
+  document.getElementById('edit-cust-name').value = cust.name;
+  document.getElementById('edit-cust-phone').value = cust.phone || '';
+  document.getElementById('edit-cust-email').value = cust.email || '';
+  document.getElementById('edit-cust-other').value = cust.other || '';
+  document.getElementById('edit-cust-note').value = cust.note || '';
+  document.getElementById('cust-edit-modal').classList.add('show');
+}
+function closeCustEditModal() {
+  document.getElementById('cust-edit-modal').classList.remove('show');
+}
+function saveCustEdit() {
+  const id = document.getElementById('edit-cust-id').value;
+  const name = document.getElementById('edit-cust-name').value.trim();
+  if (!name) { toast('姓名不可為空'); return; }
+  const cust = db.customers.find(c => c.id === id);
+  if (!cust) return;
+  const oldName = cust.name;
+  cust.name = name;
+  cust.phone = document.getElementById('edit-cust-phone').value.trim();
+  cust.email = document.getElementById('edit-cust-email').value.trim();
+  cust.other = document.getElementById('edit-cust-other').value.trim();
+  cust.note = document.getElementById('edit-cust-note').value.trim();
+  // 同步銷售記錄客人名
+  if (oldName !== name) {
+    db.sales.forEach(s => { if (s.customer === oldName) s.customer = name; });
+  }
+  saveDB();
+  closeCustEditModal();
+  renderCustomerTable();
+  toast('✅ 客人資料已更新');
+}
+
+// ============== EXPORT / IMPORT ==============
+let importMode = 'merge';
+function setImportMode(m) {
+  importMode = m;
+  document.getElementById('import-mode-merge').classList.toggle('active', m === 'merge');
+  document.getElementById('import-mode-replace').classList.toggle('active', m === 'replace');
+}
+
+function buildWorkbook() {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: 庫存
+  const invRows = db.inventory.map(i => ({
+    'ID': i.id, '品名': i.name, '品種': i.species||'', '年份': i.year||'',
+    '節氣': i.solar||'', '庫存(公克)': i.stockG,
+    '售價/斤': i.priceJin??'', '售價/100g': i.price100g??'',
+    '售價/10g': i.price10g??'', '售價/1g': i.price1g??''
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(invRows.length ? invRows : [{}]), '庫存');
+
+  // Sheet 2: 銷售記錄
+  const saleRows = db.sales.map(s => ({
+    'ID': s.id, '時間': s.time, '客人': s.customer||'',
+    '茶品ID': s.teaId||'', '茶品名稱': s.teaName,
+    '單位': s.unit, '數量': s.qty, '金額': s.price,
+    '有折扣': s.discount ? '是' : '否', '備註': s.note||'', '模式': s.mode||'auto',
+    '扣庫存(公克)': s.stockG||0
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(saleRows.length ? saleRows : [{}]), '銷售記錄');
+
+  // Sheet 3: 客人名單
+  const custRows = db.customers.map(c => ({
+    'ID': c.id, '姓名': c.name, '電話': c.phone||'',
+    'Email': c.email||'', '其他聯絡': c.other||'', '備註': c.note||''
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(custRows.length ? custRows : [{}]), '客人名單');
+
+  return wb;
+}
+
+function exportExcel() {
+  const wb = buildWorkbook();
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `茶葉管理_${date}.xlsx`);
+  toast('✅ Excel 已下載');
+}
+
+function sendMail() {
+  exportExcel();
+  const to = encodeURIComponent(document.getElementById('mail-to').value.trim());
+  const subject = encodeURIComponent(document.getElementById('mail-subject').value.trim() || '茶葉庫存與銷售資料');
+  const body = encodeURIComponent(
+    document.getElementById('mail-body').value.trim() +
+    '\n\n（請將剛才下載的 Excel 檔案手動附加至此郵件）'
+  );
+  setTimeout(() => { window.location.href = `mailto:${to}?subject=${subject}&body=${body}`; }, 400);
+}
+
+function importExcel() {
+  const file = document.getElementById('import-file').files[0];
+  const resultEl = document.getElementById('import-result');
+  if (!file) { resultEl.innerHTML = '<span style="color:var(--danger)">請先選擇 Excel 檔案</span>'; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const getSheet = name => {
+        const ws = wb.Sheets[name];
+        return ws ? XLSX.utils.sheet_to_json(ws) : [];
+      };
+
+      const invData = getSheet('庫存');
+      const saleData = getSheet('銷售記錄');
+      const custData = getSheet('客人名單');
+
+      const parseInv = r => ({
+        id: r['ID']||uid(), name: r['品名']||'', species: r['品種']||'',
+        year: String(r['年份']||''), solar: r['節氣']||'',
+        stockG: parseFloat(r['庫存(公克)'])||0,
+        priceJin: r['售價/斤']!=='' && r['售價/斤']!=null ? parseFloat(r['售價/斤']) : null,
+        price100g: r['售價/100g']!=='' && r['售價/100g']!=null ? parseFloat(r['售價/100g']) : null,
+        price10g: r['售價/10g']!=='' && r['售價/10g']!=null ? parseFloat(r['售價/10g']) : null,
+        price1g: r['售價/1g']!=='' && r['售價/1g']!=null ? parseFloat(r['售價/1g']) : null,
+      });
+      const parseSale = r => ({
+        id: r['ID']||uid(), time: r['時間']||'', customer: r['客人']||'',
+        teaId: r['茶品ID']||null, teaName: r['茶品名稱']||'',
+        unit: r['單位']||'g', qty: parseFloat(r['數量'])||0,
+        price: parseFloat(r['金額'])||0, discount: r['有折扣']==='是',
+        note: r['備註']||'', mode: r['模式']||'auto',
+        stockG: parseFloat(r['扣庫存(公克)'])||0
+      });
+      const parseCust = r => ({
+        id: r['ID']||uid(), name: r['姓名']||'', phone: r['電話']||'',
+        email: r['Email']||'', other: r['其他聯絡']||'', note: r['備註']||''
+      });
+
+      if (importMode === 'replace') {
+        db.inventory = invData.map(parseInv);
+        db.sales = saleData.map(parseSale);
+        db.customers = custData.map(parseCust);
+      } else {
+        // merge by ID
+        const mergeById = (existing, incoming, parser) => {
+          const map = {};
+          existing.forEach(x => map[x.id] = x);
+          incoming.forEach(r => { const p = parser(r); map[p.id] = p; });
+          return Object.values(map);
+        };
+        db.inventory = mergeById(db.inventory, invData, parseInv);
+        db.sales = mergeById(db.sales, saleData, parseSale);
+        db.customers = mergeById(db.customers, custData, parseCust);
+      }
+      saveDB();
+      resultEl.innerHTML = `<span style="color:var(--accent-dark)">✅ 匯入成功！庫存 ${db.inventory.length} 筆、銷售 ${db.sales.length} 筆、客人 ${db.customers.length} 筆</span>`;
+      document.getElementById('import-file').value = '';
+      toast('✅ 資料匯入完成');
+    } catch(err) {
+      resultEl.innerHTML = `<span style="color:var(--danger)">❌ 匯入失敗：${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ============== INIT ==============
+loadDB();
+// seed demo data if empty
+if (!db.inventory.length) {
+  db.inventory = [
+    { id: uid(), year: '2024', solar: '清明', species: '烏龍', name: '阿里山高山烏龍', stockG: 3000, priceJin: 1800, price100g: 320, price10g: 35, price1g: null },
+    { id: uid(), year: '2023', solar: '穀雨', species: '紅茶', name: '日月潭紅玉', stockG: 1800, priceJin: 1500, price100g: 260, price10g: null, price1g: null },
+    { id: uid(), year: '2024', solar: '冬至', species: '綠茶', name: '三峽碧螺春', stockG: 1200, priceJin: null, price100g: 180, price10g: 20, price1g: 2 },
+  ];
+  db.customers = [
+    { id: uid(), name: '陳小明', phone: '0912-345678', email: 'chen@email.com', other: '', note: '喜歡高山茶' },
+    { id: uid(), name: '林美玲', phone: '0923-456789', email: '', other: 'LINE: meilin88', note: '' },
+  ];
+  saveDB();
+}
+setSaleNow();
+</script>
+</body>
+</html>
